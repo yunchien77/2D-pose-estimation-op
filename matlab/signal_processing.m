@@ -1,0 +1,186 @@
+% 讀取 CSV 文件並跳過第一行
+data = readtable('angles_data_pro_19.csv', 'HeaderLines', 1);
+
+% 提取數值資料列（假設資料在第一列）
+numeric_data = data{:, 1};
+
+% 繪製折線圖，假設你有一個時間或索引列作為 x 值
+x_data = 1:numel(numeric_data); 
+
+%% original data
+
+% 繪製原始數據折線圖
+figure;
+plot(x_data, numeric_data);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform');
+
+%% detrend 函數
+
+% D = detrend(A) 從 A 的資料中移除最佳直線擬合線，並傳回其餘的資料
+% 如果 A 是向量，則 detrend 從 A 的元素中減去趨勢
+% 如果 A 是矩陣，則 detrend 分別對每列進行運算，從 A 的對應列中減去每個趨勢
+% 如果 A 是多維數組，則 detrend 會將所有維度按列進行運算，從 A 的對應列中減去每個趨勢
+% 如果 A 是具有 single 或 double 類型的數值變數的表或時間表，則 detrend 分別對 A 的每個變數進行運算，從 A 的對應變數中減去每個趨勢
+
+detrended_data = detrend(numeric_data);
+
+% 繪製去除趨勢後的數據折線圖
+figure; 
+plot(x_data, detrended_data);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform after detrending');
+
+%%
+% 去除n次多項式趨勢
+
+% D = detrend(A,n) 去除 n 次多項式趨勢
+% 當 n = 0 時，detrend 從 A 中刪除平均值
+% 當 n = 1 時，detrend 會去除線性趨勢
+% 當 n = 2 時，detrend 會去除二次趨勢
+detrended_data_n0 = detrend(numeric_data, 0);
+detrended_data_n1 = detrend(numeric_data, 1);
+detrended_data_n2 = detrend(numeric_data, 2);
+
+% 繪製去除多項式趨勢後的數據折線圖
+figure; 
+subplot(3, 1, 1); plot(x_data, detrended_data_n0); xlabel('Samples'); ylabel('Angles'); title('detrending for n = 0');
+subplot(3, 1, 2); plot(x_data, detrended_data_n1); xlabel('Samples'); ylabel('Angles'); title('detrending for n = 1');
+subplot(3, 1, 3); plot(x_data, detrended_data_n2); xlabel('Samples'); ylabel('Angles'); title('detrending for n = 2');
+
+%% 繪製在同一張figure
+
+figure;
+plot(x_data, numeric_data);
+hold on;
+plot(x_data, detrended_data);
+legend("original", "detrending");
+
+
+%%
+smoothed_data = smoothdata(numeric_data);
+
+figure;
+plot(x_data, smoothed_data);
+hold on;
+plot(x_data, numeric_data);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform after smoothing');
+legend("original", "smoothing");
+
+
+%% 平滑處理
+
+window_length = 11; % 窗口長度
+degree = 3; % 多項式階數
+
+% Savitzky-Golay 濾波器
+y_smooth = sgolayfilt(numeric_data, degree, window_length);
+
+figure;
+plot(x_data, y_smooth);
+hold on;
+plot(x_data, numeric_data);
+xlabel('Samples');
+ylabel('Angles');
+title('Savitzky-Golay');
+legend("original", "smoothing");
+
+%%
+
+% 使用移動平均進行平滑處理
+window_size = 5; % 窗口大小
+smoothed_data_movmean = movmean(numeric_data, window_size);
+
+% 繪製原始數據和移動平均後的數據
+figure;
+plot(x_data, numeric_data);
+hold on;
+plot(x_data, smoothed_data_movmean);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform with Moving Average Smoothing');
+legend('Original', 'Moving Average');
+
+%%
+
+% 使用中值濾波進行平滑處理
+window_length = 5; % 窗口長度
+smoothed_data_medfilt = medfilt1(numeric_data, window_length);
+
+% 繪製原始數據和中值濾波後的數據
+figure;
+plot(x_data, numeric_data);
+hold on;
+plot(x_data, smoothed_data_medfilt);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform with Median Filter Smoothing');
+legend('Original', 'Median Filter');
+
+
+%% medfilt1 & sgolayfilt
+
+window_length = 5; 
+smoothed_data_medfilt = medfilt1(numeric_data, window_length);
+window_length = 11; 
+degree = 3; 
+smoothed_data_2 = sgolayfilt(smoothed_data_medfilt, degree, window_length);
+
+figure;
+plot(x_data, numeric_data);
+hold on;
+plot(x_data, smoothed_data_2);
+hold on;
+plot(x_data, y_smooth);
+xlabel('Samples');
+ylabel('Angles');
+title('Angle change waveform with Median Filter Smoothing');
+legend('Original', 'Median Filter + smooth', 'smooth');
+
+
+%% B = smoothdata(___,method)
+
+% Smoothing method, specified as one of these values:
+% "movmean" — Average over each window of A. This method is useful for reducing periodic trends in data.
+% "movmedian" — Median over each window of A. This method is useful for reducing periodic trends in data when outliers are present.
+% "gaussian" — Gaussian-weighted average over each window of A.
+% "lowess" — Linear regression over each window of A. This method can be computationally expensive, but results in fewer discontinuities.
+% "loess" — Quadratic regression over each window of A. This method is slightly more computationally expensive than "lowess".
+% "rlowess" — Robust linear regression over each window of A. This method is a more computationally expensive version of the method "lowess", but it is more robust to outliers.
+% "rloess" — Robust quadratic regression over each window of A. This method is a more computationally expensive version of the method "loess", but it is more robust to outliers.
+% "sgolay" — Savitzky-Golay filter, which smooths according to a quadratic polynomial that is fitted over each window of A. This method can be more effective than other methods when the data varies rapidly.
+
+smoothed_movmean = smoothdata(numeric_data, "movmean");
+smoothed_movmedian = smoothdata(numeric_data, "movmedian");
+smoothed_gaussian = smoothdata(numeric_data, "gaussian");
+smoothed_lowess = smoothdata(numeric_data, "lowess");
+smoothed_loess = smoothdata(numeric_data, "loess");
+smoothed_rlowess = smoothdata(numeric_data, "rlowess");
+smoothed_sgolay = smoothdata(numeric_data, "sgolay");
+
+figure(1); plot(x_data, smoothed_movmean); hold on; plot(x_data, numeric_data); title('movmean');
+figure(2); plot(x_data, smoothed_movmedian); hold on; plot(x_data, numeric_data); title('movmedian'); 
+figure(3); plot(x_data, smoothed_gaussian); hold on; plot(x_data, numeric_data); title('gaussian');
+figure(4); plot(x_data, smoothed_lowess); hold on; plot(x_data, numeric_data); title('lowess');
+figure(5); plot(x_data, smoothed_loess); hold on; plot(x_data, numeric_data); title('loess');
+figure(6); plot(x_data, smoothed_rlowess); hold on; plot(x_data, numeric_data); title('rlowess');
+figure(7); plot(x_data, smoothed_sgolay); hold on; plot(x_data, numeric_data); title('sgolay');
+
+%% loess & sgolay --> good
+
+%%
+figure;
+subplot(3, 3, 1); plot(x_data, smoothed_movmean); hold on; plot(x_data, numeric_data); title('movmean');
+subplot(3, 3, 2); plot(x_data, smoothed_movmedian); hold on; plot(x_data, numeric_data); title('movmedian'); 
+subplot(3, 3, 3); plot(x_data, smoothed_gaussian); hold on; plot(x_data, numeric_data); title('gaussian');
+subplot(3, 3, 4); plot(x_data, smoothed_lowess); hold on; plot(x_data, numeric_data); title('lowess');
+subplot(3, 3, 5); plot(x_data, smoothed_loess); hold on; plot(x_data, numeric_data); title('loess');
+subplot(3, 3, 6); plot(x_data, smoothed_rlowess); hold on; plot(x_data, numeric_data); title('rlowess'); 
+subplot(3, 3, 7); plot(x_data, smoothed_sgolay); hold on; plot(x_data, numeric_data); title('sgolay'); 
+
+
+
