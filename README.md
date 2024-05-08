@@ -18,7 +18,7 @@ Use the body 25 package in [**OpenPose**](https://github.com/CMU-Perceptual-Comp
 ## Model
 This is a schematic diagram of key points detected by the ```body 25``` model.
 
-![Imgur](https://i.imgur.com/RK42RdJ.png)
+<img src= "https://i.imgur.com/RK42RdJ.png" width="18%">
 
 ## Built Environment
 We use  ```Colab``` to build the openpose environment. Due to version changes, models may be missed. You need to put the package into the corresponding folder by yourself.
